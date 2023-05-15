@@ -1,0 +1,340 @@
+#include <iostream>
+#include <list>
+#include<stack>
+#include <limits.h>
+#include <queue>
+#include <string.h>
+using namespace std;
+
+class Adjacency
+{
+private:
+	list<int> adjList;
+	int size;
+public:
+	Adjacency() {}
+	Adjacency(int V) {}
+	void push(int data)
+	{
+		adjList.push_back(data);
+		size++;
+	}
+	void print()
+	{
+		for (auto const &i : adjList)
+			cout << " -> " << i;
+	}
+	void printArray()
+	{
+		for (auto const &i : adjList)
+			cout << i << " ";
+	}
+	int getSize() { return adjList.size(); }
+	int getElement(int idx) 
+	{
+		auto it = adjList.begin();
+		advance(it, idx);
+		return *it;
+	}
+};
+class Graph
+{
+private:
+    int V;
+    Adjacency *adj;
+
+public:
+    Graph(int V){
+        this->V = V;
+        adj = new Adjacency[V];
+    }
+    void addEdge(int v, int w){
+        adj[v].push(w);
+    }
+    void printGraph()
+    {
+        for (int v = 0; v < V; ++v)
+        {
+            cout << "\nAdjacency list of vertex " << v << "\nhead ";
+            adj[v].print();
+        }
+    }
+    Adjacency *BFS(int v)
+    {
+        if (v >= V)
+            return NULL;
+        Adjacency *res = new Adjacency();
+        // tao 1 mang bool visited
+        bool visited[V];
+        for (bool it : visited)
+            it = false;
+        // day la 1 cai queue
+        list<int> ls;
+        ls.push_back(v);
+        visited[v] = 1;
+        while (!ls.empty())
+        {
+            int f = ls.front();
+            auto a = adj[f];
+            ls.pop_front();
+            res->push(f);
+            // run adjacency list anh check visited
+            for (int i = 0; i < a.getSize(); i++)
+            {
+                int e = a.getElement(i);
+                if (!visited[e])
+                {
+                    ls.push_back(e);
+                    visited[e] = true;
+                }
+            }
+        }
+        return res;
+    }
+    Adjacency *BFSMain()
+    {
+        Adjacency *res = new Adjacency();
+        bool visited[V];
+        // set bang visited
+        for (auto it : visited)
+            it = false;
+        for (int i = 0; i < V; i++)
+        {
+            if (!visited[i])
+            {
+                // BFS for ith node
+                list<int> ls;
+                ls.push_back(i);
+                visited[i] = true;
+
+                while (!ls.empty())
+                {
+                    int f = ls.front();
+                    ls.pop_front();
+                    res->push(f);
+                    auto a = adj[f];
+                    for (int i = 0; i < a.getSize(); i++)
+                    {
+                        int e = a.getElement(i);
+                        if (!visited[e])
+                        {
+                            ls.push_back(e);
+                            visited[e] = true;
+                        }
+                    }
+                }
+            }
+        }
+        return res;
+    }
+    void DFSUtil(int v, bool visited[], Adjacency *&res)
+    {
+        visited[v] = true;
+        res->push(v);
+        auto a = adj[v];
+        for (int i = 0; i < a.getSize(); i++)
+        {
+            int e = a.getElement(i);
+            if (!visited[e])
+            {
+                DFSUtil(e, visited, res);
+            }
+        }
+    }
+    Adjacency *DFS(int v)
+    {
+        if (v >= V)
+            return NULL;
+        Adjacency *res = new Adjacency();
+        bool visited[V];
+        for (auto it : visited)
+        {
+            it = false;
+        }
+        DFSUtil(v, visited, res);
+        return res;
+    }
+    void topo(int v, bool visited[], stack<int> &s)
+    {
+        visited[v] = true;
+        auto a = adj[v];
+        for (int i = 0; i < a.getSize(); i++)
+        {
+            int e = a.getElement(i);
+            if (!visited[e])
+            {
+                topo(e, visited, s);    
+            }
+        }
+        s.push(v);
+    }
+    void topologicalSort()
+    {
+        stack<int> s;
+
+        bool visited[V];
+        for (int i = 0; i < V; i++)
+            visited[i] = false;
+
+        for (int i = 0; i < V; i++)
+        {
+            if (!visited[i])
+            {
+                topo(i, visited, s);
+            }
+        }
+        while(!s.empty()){
+            cout << s.top() << " ";
+            s.pop();
+        }
+    }   
+    
+};
+#define V 6
+int getMinIndex(int dist[], bool sptSet[]){
+    int minVal = INT_MAX, index;
+    for (int i = 0; i < V;i++){
+        if(!sptSet[i] && dist[i] <= minVal){ // is not in the tree and have the min weight
+            minVal = dist[i];
+            index = i;
+        }
+    }
+    return index;
+}
+void dija(int graph[V][V], int src){ // shortest path from one vertex to all
+    // answer
+    int dist[V];
+
+    bool sptSet[V]; // check the vertex is include in the tree
+    for(int i = 0 ; i< V;i++){
+        dist[i] = INT_MAX;
+        sptSet[i] = false;
+    }
+
+    dist[src] = 0;
+    for (int i = 0; i < V - 1;i++){
+        // get the minimun in set 2
+        int u = getMinIndex(dist, sptSet);
+
+        sptSet[u] = true;
+        // set the weight of its ajacency
+        for (int v = 0; v < V;v++){
+            // Update dist[v] only if is not in sptSet,
+            // there is an edge from u to v,
+            // and total weight of path from src to v through u is maller than current value of dist[v]
+
+            // chua cho vao cay, co ket noi voi v, di tu goc, co tong be hon hien tai
+            if(!sptSet[v] && graph[u][v] && dist[u] != INT_MAX &&  dist[u] + graph[u][v] < dist[v])
+                dist[v] = dist[u] + graph[u][v];
+        }
+    }
+    for (int i : dist){
+        cout << i << " ";
+    }
+}
+
+int getmin(int key[], bool mstSet[]){
+    int minval = INT_MAX, index;
+    for (int i = 0; i < V;i++){
+        if(!mstSet[i] && key[i] < minval){
+            minval = key[i];
+            index = i;
+        }
+    }
+    return index;
+}
+void primMST(int graph[V][V]){ // tong cua canh la nho nhat
+    int parent[V]; // store constructed MST
+    int key[V]; // store the adjacency weight when get the vertice
+    bool mstSet[V]; // check if the vertice in the MST
+
+    for (int i = 0; i < V;i++){
+        key[i] = INT_MAX;
+        mstSet[i] = false;
+    }
+
+    key[0] = 0; // arbitrary
+    parent[0] = -1; // root doesn't have parent
+    for (int i = 0; i < V - 1;i++){ // V - 1 because we have chose 1 vertex to be the root
+        int u = getmin(key, mstSet);
+        mstSet[u] = true;
+        // update
+        for (int v = 0; v < V;v++){
+            if(graph[u][v] && !mstSet[v] && graph[u][v] < key[v])
+            {
+                parent[v] = u;
+                key[v] = graph[u][v];
+            }
+        }
+    }
+
+    cout << "Edge \tWeight\n";
+    for (int i = 1; i < V; i++)
+        cout << parent[i] << " - " << i << " \t"
+             << graph[i][parent[i]] << " \n";
+}
+bool bfs(int rGraph[V][V], int s, int t, int parent[]){
+    bool visited[V];
+    memset(visited, 0, sizeof(visited));
+
+    queue<int> q;
+    q.push(s);
+    visited[s] = 1;
+    parent[s] = -1;
+    while(!q.empty()){
+        int u = q.front();
+        q.pop();
+        for (int v = 0; v < V;v++){
+            if(!visited[v] && rGraph[u][v]){
+                if(v == t){
+                    parent[v] = u;
+                    return true;
+                }
+                q.push(v);
+                parent[v] = u;
+                visited[v] = true;
+            }
+        }
+    }
+    return false;
+}
+int fordFulkerson(int graph[V][V], int s, int t){
+    int u, v;
+    int rGraph[V][V];
+
+    for (u = 0; u < V;u++){
+        for (v = 0; v < V;v++){
+            rGraph[u][v] = graph[u][v];
+        }
+    }
+    int parent[V];
+    int max_flow = 0;
+
+    while(bfs(rGraph, s, t, parent)){
+        int part_flow = INT_MAX;
+        // chay nguoc lai chon thang be nhat
+        for (v = t; v != s; v = parent[v]){
+            u = parent[v];
+            part_flow = min(part_flow, rGraph[u][v]);
+        }
+        // chay nguoc lai va update rGraph
+        for (v = t; v != s; v = parent[v]){
+            u = parent[v];
+            rGraph[u][v] -= part_flow;
+            rGraph[v][u] += part_flow;
+        }
+        max_flow += part_flow;
+    }
+    return max_flow;
+}
+int main()
+{
+     int graph[V][V]
+        = { { 0, 16, 13, 0, 0, 0 }, { 0, 0, 10, 12, 0, 0 },
+            { 0, 4, 0, 0, 14, 0 },  { 0, 0, 9, 0, 0, 20 },
+            { 0, 0, 0, 7, 0, 4 },   { 0, 0, 0, 0, 0, 0 } };
+ 
+    cout << "The maximum possible flow is "
+         << fordFulkerson(graph, 0, 5);
+    return 0;
+}
